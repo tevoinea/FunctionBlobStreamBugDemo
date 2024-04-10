@@ -16,10 +16,17 @@ namespace BugDemo
         }
 
         [Function("BlobStream")]
-        public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req, CancellationToken cancellationToken)
         {
-            var fStream = new FileStream("C:\\CustomerLogs\\tools.zip", FileMode.Open);
-            return new FileStreamResult(fStream, new MediaTypeHeaderValue("application/zip"));
+            try {
+                cancellationToken.ThrowIfCancellationRequested();
+                var fStream = new FileStream("C:\\CustomerLogs\\tools.zip", FileMode.Open);
+                return new FileStreamResult(fStream, new MediaTypeHeaderValue("application/zip"));
+            }
+            catch (OperationCanceledException) {
+                _logger.LogInformation("Canceled downloading blob stream");
+                return new OkResult();
+            }
         }
     }
 }
